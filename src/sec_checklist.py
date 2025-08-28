@@ -11,12 +11,18 @@ def run(cmd):
         return subprocess.check_output(cmd, shell=True, text=True, stderr=subprocess.STDOUT).strip()
     except Exception as e:
         return f"ERR: {e}"
-        
+
 def firewall_status():
     # macOS Application Firewall
     if sys.platform == "darwin":
-        # returns "Firewall is enabled. (State = 1)" or "Firewall is disabled. (State = 0)"
-        return run("/usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate")
+        # Primary: human-readable state
+        out = run("/usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate")
+        if out.startswith("ERR"):
+            # Fallback: numeric state from preferences (0=off, 1=on, 2=on for essential services)
+            code = run("defaults read /Library/Preferences/com.apple.alf globalstate")
+            mapping = {"0": "off", "1": "on (block incoming)", "2": "on (essential services)"}
+            return f"macOS firewall: {mapping.get(code.strip(), code.strip())}"
+        return out
     # Windows
     if sys.platform.startswith("win"):
         return run("netsh advfirewall show allprofiles")
