@@ -11,10 +11,16 @@ def run(cmd):
         return subprocess.check_output(cmd, shell=True, text=True, stderr=subprocess.STDOUT).strip()
     except Exception as e:
         return f"ERR: {e}"
-
+        
 def firewall_status():
+    # macOS Application Firewall
+    if sys.platform == "darwin":
+        # returns "Firewall is enabled. (State = 1)" or "Firewall is disabled. (State = 0)"
+        return run("/usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate")
+    # Windows
     if sys.platform.startswith("win"):
         return run("netsh advfirewall show allprofiles")
+    # Linux (common tools)
     elif shutil.which("ufw"):
         return run("ufw status")
     elif shutil.which("firewall-cmd"):
